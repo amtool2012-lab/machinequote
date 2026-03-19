@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RFQ Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <nav class="top-menu panel">
+      <a class="menu-link" href="/">Inbox</a>
+      <a class="menu-link active" href="/setup.html">Setup</a>
+      <a class="menu-link" href="/rfqs.html">Saved RFQs</a>
+    </nav>
+
+    <section class="panel stack-gap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Setup</p>
+          <h1 class="page-title">Connect Gmail and confirm the RFQ desk is ready.</h1>
+        </div>
+        <div class="inline-actions">
+          <a class="button button-muted button-link" href="/">Inbox</a>
+          <a class="button button-muted button-link" href="/rfqs.html">Saved RFQs</a>
+        </div>
+      </div>
+
+      <div id="configCards" class="status-grid"></div>
+
+      <div class="connection-actions">
+        <button id="connectGmailButton" class="button button-primary" type="button">Connect Gmail</button>
+        <button id="refreshConfigButton" class="button button-muted" type="button">Refresh Status</button>
+      </div>
+
+      <label class="field">
+        <span>OAuth Redirect</span>
+        <input id="redirectUriInput" type="text" readonly>
+      </label>
+
+      <div class="callout">
+        <strong>Environment variables needed:</strong>
+        <p><code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, optionally <code>GOOGLE_REDIRECT_URI</code>, and <code>OPENROUTER_API_KEY</code> if you want model help.</p>
+      </div>
+
+      <p id="setupStatus" class="status-line" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script src="setup.js"></script>
+</body>
+</html>

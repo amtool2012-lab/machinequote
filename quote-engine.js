@@ -1,236 +1,367 @@
-const rates = {
-  materials: {
-    aluminum_6061: 18,
-    aluminum_7075: 24,
-    steel_1018: 20,
-    stainless_304: 28,
-    stainless_316: 34,
-    delrin: 12,
-    titanium: 52
-  },
-  finishMultiplier: {
-    as_machined: 1,
-    bead_blast: 1.08,
-    anodized_clear: 1.15,
-    anodized_black: 1.18,
-    powder_coat: 1.2,
-    passivated: 1.12
-  },
-  toleranceMultiplier: {
-    standard: 1,
-    precision: 1.14,
-    tight: 1.3
-  },
-  complexityMultiplier: {
-    simple: 0.88,
-    medium: 1,
-    complex: 1.32
-  },
-  leadMultiplier: {
-    standard: 1,
-    expedite: 1.18,
-    rush: 1.35
-  }
-};
+const MATERIAL_HINTS = [
+  "6061",
+  "7075",
+  "1018",
+  "1045",
+  "4140",
+  "17-4",
+  "304",
+  "316",
+  "aluminum",
+  "stainless",
+  "steel",
+  "brass",
+  "copper",
+  "delrin",
+  "acetal",
+  "peek",
+  "nylon",
+  "titanium"
+];
 
-const labels = {
-  materials: {
-    aluminum_6061: "Aluminum 6061",
-    aluminum_7075: "Aluminum 7075",
-    steel_1018: "Steel 1018",
-    stainless_304: "Stainless 304",
-    stainless_316: "Stainless 316",
-    delrin: "Delrin",
-    titanium: "Titanium Grade 5"
-  },
-  finish: {
-    as_machined: "As Machined",
-    bead_blast: "Bead Blast",
-    anodized_clear: "Clear Anodize",
-    anodized_black: "Black Anodize",
-    powder_coat: "Powder Coat",
-    passivated: "Passivated"
-  },
-  tolerance: {
-    standard: "Standard (+/- 0.005\")",
-    precision: "Precision (+/- 0.002\")",
-    tight: "Tight (+/- 0.001\")"
-  },
-  leadTime: {
-    standard: "Standard (10 business days)",
-    expedite: "Expedite (5 business days)",
-    rush: "Rush (2 business days)"
-  }
-};
+const FINISH_HINTS = [
+  "anodize",
+  "anodized",
+  "black oxide",
+  "passivate",
+  "passivated",
+  "powder coat",
+  "bead blast",
+  "plating",
+  "zinc",
+  "nickel"
+];
 
-function currency(value) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2
-  }).format(value);
+const CERT_HINTS = [
+  "cert",
+  "certification",
+  "material cert",
+  "coc",
+  "cofc",
+  "fair",
+  "first article",
+  "inspection report"
+];
+
+function cleanText(value) {
+  return String(value || "")
+    .replace(/\r/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
-function getLeadDays(leadTime) {
-  if (leadTime === "rush") {
-    return 2;
-  }
-  if (leadTime === "expedite") {
-    return 5;
-  }
-  return 10;
+function normalizeWhitespace(value) {
+  return cleanText(value).toLowerCase();
 }
 
-function buildRecommendations(data, total) {
-  const notes = [];
-
-  if (!data.fileName) {
-    notes.push("No STEP file is attached yet, so this estimate should be treated as a budgetary quote until geometry is reviewed.");
-  } else {
-    notes.push(`Attached file detected: ${data.fileName}. Confirm manufacturability and stock size before release.`);
+function findFirstMatch(text, regexes) {
+  for (const regex of regexes) {
+    const match = text.match(regex);
+    if (match) {
+      return match;
+    }
   }
 
-  if (data.quantity <= 3) {
-    notes.push("Low quantity suggests prototype pricing. Consider combining setups with nearby parts to improve unit cost.");
-  }
-
-  if (data.quantity >= 50) {
-    notes.push("Batch quantity is high enough that dedicated fixturing or soft jaws may reduce cycle cost.");
-  }
-
-  if (data.tolerance === "tight") {
-    notes.push("Tight tolerance work may require additional inspection time or secondary finishing passes.");
-  }
-
-  if (data.complexity === "complex") {
-    notes.push("Complex geometry likely benefits from a fixture review and toolpath validation before committing to delivery.");
-  }
-
-  if (data.leadTime !== "standard") {
-    notes.push("Short lead times can affect machine scheduling and material availability, so keep this estimate subject to capacity confirmation.");
-  }
-
-  if (total > 5000) {
-    notes.push("Higher-value quote: consider adding first article inspection and customer approval before full release.");
-  }
-
-  if (data.notes) {
-    notes.push("Custom notes were included and should be reviewed during final quote approval.");
-  }
-
-  return notes;
+  return null;
 }
 
-function buildSummary(data, quote) {
-  const project = data.projectName || "Unnamed machining request";
-  const materialLabel = labels.materials[data.material];
-  const finishLabel = labels.finish[data.finish];
-  const toleranceLabel = labels.tolerance[data.tolerance];
-  const leadLabel = labels.leadTime[data.leadTime];
+function parseQuantity(text) {
+  const match = findFirstMatch(text, [
+    /\bqty(?:\.|uantity)?\s*[:=-]?\s*(\d{1,6})\b/i,
+    /\bquantity\s*[:=-]?\s*(\d{1,6})\b/i,
+    /\b(\d{1,6})\s*(?:pcs|pc|pieces|parts)\b/i
+  ]);
 
-  return `${project} is estimated at ${currency(quote.totalPrice)} for ${quote.quantity} part(s) in ${materialLabel} with ${finishLabel}. The current assumption uses ${data.setupHours} setup hour(s), ${data.cycleMinutes} cycle minute(s) per part, ${toleranceLabel.toLowerCase()}, and ${leadLabel.toLowerCase()}.`;
+  return match ? Number(match[1]) : null;
 }
 
-function getRiskStatus(data) {
-  if (!data.fileName || data.tolerance === "tight" || data.leadTime === "rush") {
-    return {
-      label: "Manual Review",
-      tone: "warning"
-    };
+function parseLeadTime(text) {
+  const match = findFirstMatch(text, [
+    /\blead\s*time\s*[:=-]?\s*([^.|\n]+)/i,
+    /\bneed(?:ed)?\s*by\s*[:=-]?\s*([^.|\n]+)/i,
+    /\bdue\s*date\s*[:=-]?\s*([^.|\n]+)/i,
+    /\blead time\s+(\d+\s*(?:day|days|week|weeks))/i,
+    /\b(\d+\s*(?:day|days|week|weeks))\s*lead time\b/i
+  ]);
+
+  return match ? cleanText(match[1]).slice(0, 80) : null;
+}
+
+function parseMaterial(text) {
+  const lowered = normalizeWhitespace(text);
+  const found = MATERIAL_HINTS.find((item) => lowered.includes(item));
+  return found ? found.toUpperCase() : null;
+}
+
+function parseTolerance(text) {
+  const match = findFirstMatch(text, [
+    /\+\/-\s*0?\.(\d{3,4})/i,
+    /\btolerance\s*[:=-]?\s*([^.|\n]+)/i
+  ]);
+
+  if (!match) {
+    return null;
+  }
+
+  return cleanText(match[0]).slice(0, 80);
+}
+
+function parsePartName(text, subject) {
+  const subjectMatch = cleanText(subject || "")
+    .replace(/\b(re|fw|fwd)\s*:\s*/gi, "")
+    .trim();
+
+  const match = findFirstMatch(text, [
+    /\bpart\s*(?:name|description)?\s*[:=-]?\s*([^.|\n]+)/i,
+    /\bfor\s+([^.|\n]{3,80})/i
+  ]);
+
+  if (match) {
+    return cleanText(match[1]).slice(0, 100);
+  }
+
+  return subjectMatch || "Unknown";
+}
+
+function collectAttachmentSignals(attachments) {
+  const summary = {
+    hasStep: false,
+    hasDrawingPdf: false,
+    hasPdf: false,
+    hasModel: false,
+    attachmentNames: [],
+    textSnippets: []
+  };
+
+  for (const attachment of attachments || []) {
+    const name = String(attachment.filename || "").trim();
+    const lowerName = name.toLowerCase();
+
+    if (!name) {
+      continue;
+    }
+
+    summary.attachmentNames.push(name);
+
+    if (lowerName.endsWith(".stp") || lowerName.endsWith(".step")) {
+      summary.hasStep = true;
+      summary.hasModel = true;
+    }
+
+    if (lowerName.endsWith(".pdf")) {
+      summary.hasPdf = true;
+      if (lowerName.includes("drawing") || lowerName.includes("print") || lowerName.includes("dwg")) {
+        summary.hasDrawingPdf = true;
+      }
+    }
+
+    if (attachment.excerpt) {
+      summary.textSnippets.push(cleanText(attachment.excerpt).slice(0, 1200));
+    }
+  }
+
+  return summary;
+}
+
+function detectFlags(combinedText) {
+  const lowered = normalizeWhitespace(combinedText);
+
+  return {
+    certificationsRequired: CERT_HINTS.some((item) => lowered.includes(item)),
+    finishMentioned: FINISH_HINTS.some((item) => lowered.includes(item)),
+    rushRequested: /\brush\b|\basap\b|\bexpedite\b|\burgent\b/i.test(combinedText),
+    tightTolerance: /\+\/-\s*0?\.(?:0005|001|0008)\b/i.test(combinedText) || lowered.includes("tight tolerance"),
+    platingOrFinish: FINISH_HINTS.filter((item) => lowered.includes(item)),
+    itarMentioned: lowered.includes("itar"),
+    ndaMentioned: lowered.includes("nda")
+  };
+}
+
+function estimateComplexity(rfq) {
+  const attachmentNames = (rfq.attachments || []).map((item) => item.filename.toLowerCase());
+  const text = normalizeWhitespace([rfq.subject, rfq.snippet, rfq.bodyText].join("\n"));
+  const score =
+    (attachmentNames.some((name) => name.endsWith(".stp") || name.endsWith(".step")) ? 1 : 0) +
+    (text.includes("5 axis") || text.includes("5-axis") ? 2 : 0) +
+    (text.includes("4 axis") || text.includes("4-axis") ? 1 : 0) +
+    (text.includes("fixture") ? 1 : 0) +
+    (text.includes("tight tolerance") ? 1 : 0);
+
+  if (score >= 3) {
+    return "High";
+  }
+  if (score >= 1) {
+    return "Medium";
+  }
+  return "Low";
+}
+
+function buildCommercialReview(rfqSignals, flags) {
+  const items = [];
+
+  if (!rfqSignals.quantity) {
+    items.push("Confirm quantity before quoting.");
+  }
+
+  if (!rfqSignals.material) {
+    items.push("Material is not clearly specified.");
+  }
+
+  if (!rfqSignals.leadTime) {
+    items.push("Lead time or need-by date is missing.");
+  }
+
+  if (!rfqSignals.attachmentSummary.hasStep) {
+    items.push("No STEP file found, so geometry review may be incomplete.");
+  }
+
+  if (!rfqSignals.attachmentSummary.hasPdf) {
+    items.push("No PDF drawing found; verify dimensions, tolerances, and notes.");
+  }
+
+  if (flags.certificationsRequired) {
+    items.push("Customer appears to require certs or inspection documentation.");
+  }
+
+  if (flags.rushRequested) {
+    items.push("Rush language detected, so capacity should be checked before commitment.");
+  }
+
+  return items;
+}
+
+function buildFallbackAnalysis(rfq) {
+  const attachmentSummary = collectAttachmentSignals(rfq.attachments);
+  const combinedText = cleanText(
+    [rfq.subject, rfq.snippet, rfq.bodyText, ...attachmentSummary.textSnippets].join("\n\n")
+  );
+  const flags = detectFlags(combinedText);
+
+  const extracted = {
+    quantity: parseQuantity(combinedText),
+    leadTime: parseLeadTime(combinedText),
+    material: parseMaterial(combinedText),
+    tolerance: parseTolerance(combinedText),
+    partName: parsePartName(combinedText, rfq.subject),
+    attachmentSummary,
+    complexity: estimateComplexity(rfq)
+  };
+
+  const commercialReview = buildCommercialReview(extracted, flags);
+  const nextActions = [
+    "Review STEP geometry and confirm stock size, machine envelope, and workholding approach.",
+    "Check drawing notes for hidden requirements such as deburr standard, edge breaks, or inspection sampling.",
+    "Confirm outside processing needs before promising lead time."
+  ];
+
+  if (flags.certificationsRequired) {
+    nextActions.push("Include cert and inspection cost in the final estimate package.");
   }
 
   return {
-    label: "Standard Review",
-    tone: "ok"
+    source: "fallback",
+    customerSummary: cleanText(
+      `RFQ from ${rfq.from || "unknown sender"} regarding "${rfq.subject || "untitled request"}".`
+    ),
+    extractedRequirements: {
+      quantity: extracted.quantity || "Unknown",
+      material: extracted.material || "Unknown",
+      leadTime: extracted.leadTime || "Unknown",
+      tolerance: extracted.tolerance || "Unknown",
+      partName: extracted.partName || "Unknown",
+      complexity: extracted.complexity,
+      attachments: attachmentSummary.attachmentNames
+    },
+    quoteConditions: [
+      "Quote remains subject to engineering review of the attached model and drawing.",
+      "Pricing should exclude tooling changes, fixtures, and outside processing unless explicitly listed.",
+      "Lead time should start after PO receipt, drawing approval, and material availability confirmation."
+    ],
+    risks: [
+      ...commercialReview,
+      flags.tightTolerance ? "Tight tolerance language detected and likely needs manual inspection planning." : null,
+      flags.itarMentioned ? "ITAR language detected; verify compliance workflow before proceeding." : null
+    ].filter(Boolean),
+    nextActions,
+    internalNotes: cleanText(combinedText).slice(0, 1400)
   };
 }
 
-function normalizeRequest(data) {
-  return {
-    projectName: typeof data.projectName === "string" ? data.projectName.trim() : "",
-    fileName: typeof data.fileName === "string" ? data.fileName.trim() : "",
-    material: data.material,
-    quantity: Math.max(1, Number(data.quantity) || 1),
-    finish: data.finish,
-    tolerance: data.tolerance,
-    leadTime: data.leadTime,
-    complexity: data.complexity,
-    setupHours: Math.max(0.5, Number(data.setupHours) || 0.5),
-    cycleMinutes: Math.max(1, Number(data.cycleMinutes) || 1),
-    notes: typeof data.notes === "string" ? data.notes.trim() : ""
-  };
+function buildOpenRouterPrompt(rfq) {
+  const attachmentLines = (rfq.attachments || [])
+    .map((item) => {
+      const excerpt = item.excerpt ? `\nExcerpt:\n${cleanText(item.excerpt).slice(0, 1200)}` : "";
+      return `- ${item.filename} (${item.mimeType}, ${item.size || 0} bytes)${excerpt}`;
+    })
+    .join("\n");
+
+  return `
+You are an estimating assistant for a CNC machine shop.
+Review the incoming customer RFQ email and extract only what is actually supported by the message and attachment text.
+
+Return JSON only with this shape:
+{
+  "customerSummary": "short summary",
+  "extractedRequirements": {
+    "quantity": "string",
+    "material": "string",
+    "leadTime": "string",
+    "tolerance": "string",
+    "finish": "string",
+    "partDescription": "string",
+    "attachments": ["file names"],
+    "complexity": "Low|Medium|High"
+  },
+  "quoteConditions": ["condition"],
+  "risks": ["risk"],
+  "nextActions": ["action"],
+  "internalNotes": "brief estimator notes"
 }
 
-function validateQuoteRequest(data) {
-  if (!data || typeof data !== "object") {
-    return "Quote payload must be an object";
-  }
+Rules:
+- Focus on machine-shop quoting, manufacturability, commercial risks, and missing data.
+- Mention missing information clearly.
+- Do not invent dimensions, tolerances, or materials.
+- Prefer concise, estimator-friendly language.
 
-  if (!rates.materials[data.material]) {
-    return "Unsupported material";
-  }
+Email subject:
+${rfq.subject || ""}
 
-  if (!rates.finishMultiplier[data.finish]) {
-    return "Unsupported finish";
-  }
+From:
+${rfq.from || ""}
 
-  if (!rates.toleranceMultiplier[data.tolerance]) {
-    return "Unsupported tolerance";
-  }
+Date:
+${rfq.date || ""}
 
-  if (!rates.complexityMultiplier[data.complexity]) {
-    return "Unsupported complexity";
-  }
+Snippet:
+${rfq.snippet || ""}
 
-  if (!rates.leadMultiplier[data.leadTime]) {
-    return "Unsupported lead time";
-  }
+Body:
+${cleanText(rfq.bodyText).slice(0, 6000)}
 
-  return "";
+Attachments:
+${attachmentLines || "- none"}
+  `.trim();
 }
 
-function calculateQuoteResponse(input) {
-  const data = normalizeRequest(input);
-  const machineRate = 85;
-  const setupRate = 95;
-  const materialBase = rates.materials[data.material];
-  const finishMultiplier = rates.finishMultiplier[data.finish];
-  const toleranceMultiplier = rates.toleranceMultiplier[data.tolerance];
-  const complexityMultiplier = rates.complexityMultiplier[data.complexity];
-  const leadMultiplier = rates.leadMultiplier[data.leadTime];
+function parseAnalysisResponse(text) {
+  const raw = cleanText(text);
 
-  const rawMaterialCost = materialBase * data.quantity * complexityMultiplier;
-  const rawSetupCost = data.setupHours * setupRate;
-  const rawMachiningCost = (data.cycleMinutes / 60) * machineRate * data.quantity * complexityMultiplier * toleranceMultiplier;
-  const preFinishSubtotal = rawMaterialCost + rawSetupCost + rawMachiningCost;
-  const totalWithFinish = preFinishSubtotal * finishMultiplier;
-  const finalTotal = totalWithFinish * leadMultiplier;
-  const finishCost = totalWithFinish - preFinishSubtotal;
-  const leadCost = finalTotal - totalWithFinish;
-  const unitPrice = finalTotal / data.quantity;
-
-  const quote = {
-    quantity: data.quantity,
-    unitPrice,
-    totalPrice: finalTotal,
-    materialCost: rawMaterialCost,
-    setupCost: rawSetupCost,
-    machiningCost: rawMachiningCost,
-    finishCost,
-    leadCost,
-    leadDays: getLeadDays(data.leadTime)
-  };
-
-  return {
-    input: data,
-    quote,
-    summaryText: buildSummary(data, quote),
-    recommendations: buildRecommendations(data, quote.totalPrice),
-    risk: getRiskStatus(data)
-  };
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    const fenced = raw.match(/```json\s*([\s\S]*?)```/i) || raw.match(/```([\s\S]*?)```/i);
+    if (fenced) {
+      return JSON.parse(fenced[1].trim());
+    }
+    throw error;
+  }
 }
 
 module.exports = {
-  calculateQuoteResponse,
-  validateQuoteRequest
+  buildFallbackAnalysis,
+  buildOpenRouterPrompt,
+  parseAnalysisResponse,
+  cleanText
 };

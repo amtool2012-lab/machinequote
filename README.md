@@ -1,78 +1,76 @@
-# MachineQuote
+# Machine Shop RFQ Desk
 
-MachineQuote is a lightweight web app for generating budgetary machining estimates from common intake details. It now includes a small Node backend so quote generation happens through an API instead of only in the browser.
+Machine Shop RFQ Desk is a lightweight web app for organizing RFQs from Gmail. It pulls customer emails with attachments, extracts readable text from messages and supported files, sorts requests by priority, and builds a structured internal review for estimating.
 
-- STEP file upload
-- quantity
-- material
-- finish
-- tolerance band
-- lead time
-- setup hours
-- cycle time
+When an `OPENROUTER_API_KEY` is present, the app will try OpenRouter's free routing model first and then fall back to local review rules if the free endpoint is unavailable.
 
-It is designed as a fast front-end intake tool for CNC quoting workflows.
+This is built for jobs where customers send:
 
-## Features
+- STEP or STP files
+- technical drawing PDFs
+- quantities
+- material or finish notes
+- requested lead times
 
-- Small Node backend with `POST /api/quote`
-- Single-page interface with no frontend build step
-- Machining-focused pricing breakdown
-- Intake summary for internal review or customer follow-up
-- Responsive layout for desktop and mobile
-- Risk badge to flag quotes that need manual review
+## What it does
+
+- Google Gmail OAuth connection
+- Sync recent inbox messages with attachments
+- Extract message text and selected attachment text
+- Sort RFQs by priority using keywords, attachments, known customer domains, and recency
+- Build a review summary with OpenRouter free when available, or local rules as fallback
+
+## Required environment variables
+
+```powershell
+$env:GOOGLE_CLIENT_ID="your-google-client-id"
+$env:GOOGLE_CLIENT_SECRET="your-google-client-secret"
+$env:GOOGLE_REDIRECT_URI="http://localhost:3000/oauth2callback"
+$env:OPENROUTER_API_KEY="your-openrouter-key"
+```
+
+Notes:
+
+- `GOOGLE_REDIRECT_URI` is optional. If omitted, the app uses `http://localhost:3000/oauth2callback`.
+- `OPENROUTER_API_KEY` is optional. If omitted, the app uses local review rules only.
+
+## Google Cloud setup
+
+1. Create a Google Cloud project.
+2. Enable the Gmail API.
+3. Create OAuth client credentials for a web application.
+4. Add your redirect URI, for example `http://localhost:3000/oauth2callback`.
+5. Copy the client ID and client secret into your environment variables.
+6. If the app is in testing mode, add your Gmail account under OAuth test users.
 
 ## Run locally
 
-Install is not required. Start the backend server:
-
 ```powershell
+npm install
 npm start
 ```
 
-Then open `http://localhost:3000`.
+Then open [http://localhost:3000](http://localhost:3000).
 
-## API
+## Main API routes
 
-Generate a quote with:
+- `GET /api/config` returns Gmail connection and sync status
+- `GET /api/gmail/auth-url` creates the Google OAuth URL
+- `GET /oauth2callback` finishes Gmail OAuth
+- `POST /api/inbox/sync` pulls Gmail messages into the RFQ list
+- `POST /api/rfqs/:id/analyze` builds the local review for one RFQ
 
-```http
-POST /api/quote
-Content-Type: application/json
-```
+## Current limitations
 
-Example body:
+- Gmail tokens are stored in memory only, so reconnect after restarting the server
+- STEP geometry is not deeply parsed yet; the app reads filename and any plain-text content it can extract
+- PDF estimate generation is not implemented yet
+- Attachment parsing is focused on RFQ triage, not final engineering review
 
-```json
-{
-  "projectName": "Turbo Intake Flange Rev B",
-  "fileName": "intake-flange.step",
-  "material": "aluminum_6061",
-  "quantity": 10,
-  "finish": "anodized_black",
-  "tolerance": "precision",
-  "leadTime": "expedite",
-  "complexity": "medium",
-  "setupHours": 1.5,
-  "cycleMinutes": 18,
-  "notes": "Inspect sealing face before release."
-}
-```
+## Good next steps
 
-## Pricing model
-
-This app uses a simple estimation model in the backend:
-
-- material base rate by material type
-- setup cost from estimated setup hours
-- machining cost from cycle minutes and quantity
-- multipliers for complexity, tolerance, finish, and lead time
-
-This is meant for rough estimating, not final production quoting. Final pricing should still include a geometry review, tooling review, stock confirmation, and scheduling check.
-
-## Suggested next steps
-
-- Add PDF quote export
-- Save quote history
-- Connect to a backend for customer records
-- Parse geometry metadata from STEP files
+- save Gmail tokens and synced RFQs to a database
+- generate branded estimate PDFs
+- add customer and job status tracking
+- support ERP or CRM export
+- parse drawing details and dimensions more deeply

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saved RFQs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <nav class="top-menu panel">
+      <a class="menu-link" href="/">Inbox</a>
+      <a class="menu-link" href="/setup.html">Setup</a>
+      <a class="menu-link active" href="/rfqs.html">Saved RFQs</a>
+    </nav>
+
+    <section class="panel stack-gap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Saved RFQs</p>
+          <h1 class="page-title">Review all stored quote requests in one place.</h1>
+        </div>
+        <a class="button button-muted button-link" href="/">Back To Inbox</a>
+      </div>
+
+      <p class="hero-copy">
+        Use this page to track reviewed RFQs, mark them as won or lost, and quickly scan lead time, top conditions, and major risks.
+      </p>
+
+      <p id="savedStatus" class="status-line" aria-live="polite"></p>
+      <div id="savedRfqList" class="saved-grid empty-block">
+        <p>No stored RFQs yet.</p>
+        <span>Open the inbox page, review an RFQ, and click Store RFQ.</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="rfqs.js"></script>
+</body>
+</html>
