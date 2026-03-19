@@ -1,11 +1,16 @@
 {
-  "name": "machinequote",
+  "name": "machine-shop-rfq-desk",
   "version": "1.0.0",
-  "description": "Backend-enabled machining quote estimator",
+  "description": "Gmail-powered RFQ triage app for machine shops",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "check": "node --check app.js && node --check server.js && node --check quote-engine.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "googleapis": "^154.1.0",
+    "pdf-parse": "^1.1.1"
   },
   "license": "MIT"
 }

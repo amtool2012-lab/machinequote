@@ -3,194 +3,237 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MachineQuote</title>
+  <title>American Tooling Estimate Builder</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="app-shell">
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">Machining Quote Estimator</p>
-        <h1>Turn part requests into a fast, shareable estimate.</h1>
-        <p class="hero-text">
-          Upload a STEP file, choose your manufacturing details, and generate an intake-style estimate for CNC machining work.
+  <main class="page-shell">
+    <section class="hero-card">
+      <div>
+        <p class="eyebrow">Estimate Generator</p>
+        <h1>Build a Tesla-style parts estimate and download it as a PDF.</h1>
+        <p class="hero-copy">
+          Enter parts by hand or import a CSV/XLSX file, keep American Tooling &amp; Machining Company fixed as the vendor,
+          choose who the estimate is written to, and generate a ready-to-send PDF.
         </p>
       </div>
-      <div class="hero-card">
-        <p class="hero-card-label">Best For</p>
-        <ul class="hero-list">
-          <li>Prototype RFQs</li>
-          <li>Small-batch CNC jobs</li>
-          <li>Customer intake reviews</li>
-        </ul>
+      <div class="hero-badges">
+        <div class="hero-pill">Manual entry</div>
+        <div class="hero-pill">CSV / Excel import</div>
+        <div class="hero-pill">Instant PDF download</div>
       </div>
     </section>
 
     <section class="workspace">
-      <form id="quote-form" class="panel form-panel">
-        <div class="panel-header">
-          <h2>Part Intake</h2>
-          <p>Enter the details you typically collect before pricing a job.</p>
+      <section class="panel controls-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Estimate Details</p>
+            <h2>Quote Setup</h2>
+          </div>
+          <button id="generatePdfButton" class="button button-primary" type="button">Generate PDF</button>
         </div>
 
-        <label class="field">
-          <span>Customer / Project</span>
-          <input type="text" id="projectName" name="projectName" placeholder="Example: Turbo Intake Flange Rev B">
-        </label>
-
-        <label class="field file-field">
-          <span>STEP File</span>
-          <input type="file" id="stepFile" name="stepFile" accept=".stp,.step,model/step,application/step">
-          <small>Accepted: `.stp` or `.step`</small>
-        </label>
-
-        <div class="grid two-up">
+        <div class="field-grid two-up">
           <label class="field">
-            <span>Material</span>
-            <select id="material" name="material">
-              <option value="aluminum_6061">Aluminum 6061</option>
-              <option value="aluminum_7075">Aluminum 7075</option>
-              <option value="steel_1018">Steel 1018</option>
-              <option value="stainless_304">Stainless 304</option>
-              <option value="stainless_316">Stainless 316</option>
-              <option value="delrin">Delrin</option>
-              <option value="titanium">Titanium Grade 5</option>
-            </select>
+            <span>Estimate #</span>
+            <input id="estimateNumber" type="text" value="3618">
           </label>
-
           <label class="field">
-            <span>Quantity</span>
-            <input type="number" id="quantity" name="quantity" min="1" value="10">
+            <span>Date</span>
+            <input id="estimateDate" type="date">
           </label>
         </div>
 
-        <div class="grid three-up">
+        <div class="field-grid two-up">
           <label class="field">
-            <span>Finish</span>
-            <select id="finish" name="finish">
-              <option value="as_machined">As Machined</option>
-              <option value="bead_blast">Bead Blast</option>
-              <option value="anodized_clear">Clear Anodize</option>
-              <option value="anodized_black">Black Anodize</option>
-              <option value="powder_coat">Powder Coat</option>
-              <option value="passivated">Passivated</option>
-            </select>
+            <span>Project</span>
+            <input id="projectName" type="text" value="Q 3618 Lawrence ACT parts">
           </label>
-
-          <label class="field">
-            <span>Tolerance Band</span>
-            <select id="tolerance" name="tolerance">
-              <option value="standard">Standard (+/- 0.005")</option>
-              <option value="precision">Precision (+/- 0.002")</option>
-              <option value="tight">Tight (+/- 0.001")</option>
-            </select>
-          </label>
-
           <label class="field">
             <span>Lead Time</span>
-            <select id="leadTime" name="leadTime">
-              <option value="standard">Standard (10 business days)</option>
-              <option value="expedite">Expedite (5 business days)</option>
-              <option value="rush">Rush (2 business days)</option>
-            </select>
+            <input id="leadTime" type="text" value="2-3 weeks">
           </label>
         </div>
 
-        <div class="grid three-up">
-          <label class="field">
-            <span>Part Complexity</span>
-            <select id="complexity" name="complexity">
-              <option value="simple">Simple 2.5D</option>
-              <option value="medium" selected>Medium 3-axis</option>
-              <option value="complex">Complex 4/5-axis</option>
-            </select>
+        <div class="field-grid two-up">
+          <div class="field field-toggle">
+            <span>Sales Tax</span>
+            <label class="toggle-row" for="taxEnabled">
+              <input id="taxEnabled" type="checkbox">
+              <strong>Apply tax to this estimate</strong>
+            </label>
+          </div>
+          <label id="taxRateField" class="field">
+            <span>Tax Rate %</span>
+            <input id="taxRate" type="number" min="0" step="0.01" value="0">
           </label>
+        </div>
 
+        <div class="field-grid two-up">
           <label class="field">
-            <span>Estimated Setup Hours</span>
-            <input type="number" id="setupHours" name="setupHours" min="0.5" max="24" step="0.5" value="1.5">
+            <span>Recipient Company</span>
+            <input id="recipientCompany" type="text" value="Tesla, Inc.">
           </label>
-
-          <label class="field">
-            <span>Estimated Cycle Minutes / Part</span>
-            <input type="number" id="cycleMinutes" name="cycleMinutes" min="1" max="600" step="1" value="18">
-          </label>
+          <div></div>
         </div>
 
         <label class="field">
-          <span>Notes</span>
-          <textarea id="notes" name="notes" rows="4" placeholder="Critical features, inspection needs, fixtures, threads, inserts, or packaging notes..."></textarea>
+          <span>Estimate To Address</span>
+          <textarea id="recipientAddress" rows="4">47400 Kato Rd
+Fremont, CA 94538</textarea>
         </label>
 
-        <div class="actions">
-          <button type="submit" class="button button-primary">Generate Estimate</button>
-          <button type="button" id="resetButton" class="button button-secondary">Reset</button>
+        <label class="field">
+          <span>Recipient Contact / Notes</span>
+          <input id="recipientContact" type="text" value="Lawrence">
+        </label>
+
+        <label class="field">
+          <span>Footer Notes</span>
+          <textarea id="footerNotes" rows="4">This estimated quotation is valid for 1 month.
+Please contact Charlie Lee if you have any query
+Phone: +1 (510) 688-7298
+email: amtool2012@gmail.com</textarea>
+        </label>
+
+        <div class="import-card">
+          <div>
+            <p class="eyebrow">Import Line Items</p>
+            <h3>CSV or Excel</h3>
+            <p class="muted">
+              Supported columns: part number, description, qty/quantity, price/rate/price each.
+            </p>
+          </div>
+          <input id="fileInput" type="file" accept=".csv,.xlsx,.xls,.xlsm,.xlsb,.ods">
         </div>
 
-        <p id="form-status" class="form-status" aria-live="polite"></p>
-      </form>
-
-      <section class="panel result-panel">
-        <div class="panel-header">
-          <h2>Quote Summary</h2>
-          <p>Live estimate based on the inputs on the left.</p>
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">Parts</p>
+            <h2>Line Items</h2>
+          </div>
+          <button id="addItemButton" class="button button-secondary" type="button">Add Row</button>
         </div>
 
-        <div id="empty-state" class="empty-state">
-          <p>No estimate yet.</p>
-          <span>Generate a quote to see pricing, schedule, and intake notes.</span>
+        <div class="table-wrap">
+          <table class="entry-table">
+            <thead>
+              <tr>
+                <th>Part Number</th>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Price Each</th>
+                <th>Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="itemsTableBody"></tbody>
+          </table>
         </div>
 
-        <div id="quote-output" class="quote-output hidden">
-          <div class="result-topline">
-            <div>
-              <p class="result-label">Estimated Total</p>
-              <h3 id="totalPrice">$0.00</h3>
+        <p id="statusMessage" class="status-message" aria-live="polite"></p>
+      </section>
+
+      <section class="panel preview-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Live Preview</p>
+            <h2>Estimate Layout</h2>
+          </div>
+          <div class="totals-chip" id="grandTotalChip">$0.00</div>
+        </div>
+
+        <article id="estimatePreview" class="estimate-sheet">
+          <header class="estimate-header">
+            <div class="logo-cluster">
+              <div>
+                <p class="vendor-heading">American Tooling &amp; Machining Company</p>
+                <p class="vendor-address-line">45554 INDUSTRIAL PL #5</p>
+                <p class="vendor-address-line">FREMONT, CA 94538</p>
+              </div>
             </div>
-            <div class="badge" id="riskBadge">Review Needed</div>
-          </div>
+            <div class="meta-stack">
+              <h3 class="document-title">Estimate</h3>
+              <div class="meta-card">
+                <span>Date</span>
+                <strong id="previewDate"></strong>
+              </div>
+              <div class="meta-card">
+                <span>Estimate #</span>
+                <strong id="previewEstimateNumber"></strong>
+              </div>
+            </div>
+          </header>
 
-          <div class="result-grid">
-            <article class="metric-card">
-              <p class="metric-label">Unit Price</p>
-              <strong id="unitPrice">$0.00</strong>
-            </article>
-            <article class="metric-card">
-              <p class="metric-label">Estimated Lead Time</p>
-              <strong id="leadTimeResult">-</strong>
-            </article>
-            <article class="metric-card">
-              <p class="metric-label">Quoted Quantity</p>
-              <strong id="quantityResult">-</strong>
-            </article>
-          </div>
+          <section class="address-grid">
+            <div class="address-card">
+              <p class="mini-label">Name / Address</p>
+              <strong id="previewRecipientCompany"></strong>
+              <p id="previewRecipientAddress"></p>
+              <p id="previewRecipientContact" class="recipient-contact"></p>
+            </div>
+            <div class="address-card vendor-card">
+              <strong>American Tooling &amp; Machining Company</strong>
+              <p>45554 INDUSTRIAL PL #5</p>
+              <p>FREMONT, CA 94538</p>
+            </div>
+          </section>
 
-          <div class="breakdown">
-            <h4>Cost Breakdown</h4>
-            <div class="breakdown-row"><span>Material</span><strong id="materialCost">$0.00</strong></div>
-            <div class="breakdown-row"><span>Setup</span><strong id="setupCost">$0.00</strong></div>
-            <div class="breakdown-row"><span>Machining</span><strong id="machiningCost">$0.00</strong></div>
-            <div class="breakdown-row"><span>Finish</span><strong id="finishCost">$0.00</strong></div>
-            <div class="breakdown-row"><span>Lead Time Adjustment</span><strong id="leadCost">$0.00</strong></div>
-          </div>
+          <section class="summary-strip">
+            <div>
+              <span>Project</span>
+              <strong id="previewProject"></strong>
+            </div>
+            <div>
+              <span>Total</span>
+              <strong id="previewHeaderTotal"></strong>
+            </div>
+          </section>
 
-          <div class="breakdown notes-card">
-            <h4>Intake Snapshot</h4>
-            <p id="summaryText"></p>
-          </div>
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="previewItemsBody"></tbody>
+          </table>
 
-          <div class="breakdown notes-card">
-            <h4>Estimator Notes</h4>
-            <ul id="recommendations"></ul>
-          </div>
-        </div>
+          <section class="footer-grid">
+            <div class="footer-notes">
+              <p id="previewLeadTime"></p>
+              <div id="previewNotes"></div>
+            </div>
+            <div class="totals-panel">
+              <div class="totals-row">
+                <span>Subtotal</span>
+                <strong id="previewSubtotal"></strong>
+              </div>
+              <div class="totals-row">
+                <span id="previewTaxLabel">Sales Tax</span>
+                <strong id="previewTaxAmount"></strong>
+              </div>
+              <div class="totals-row grand">
+                <span>Total</span>
+                <strong id="previewGrandTotal"></strong>
+              </div>
+            </div>
+          </section>
+        </article>
       </section>
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

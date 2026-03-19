@@ -1,2 +1,5 @@
 .DS_Store
 Thumbs.db
+.env
+node_modules/
+sample-page.png
