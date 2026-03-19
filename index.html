@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MachineQuote</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Machining Quote Estimator</p>
+        <h1>Turn part requests into a fast, shareable estimate.</h1>
+        <p class="hero-text">
+          Upload a STEP file, choose your manufacturing details, and generate an intake-style estimate for CNC machining work.
+        </p>
+      </div>
+      <div class="hero-card">
+        <p class="hero-card-label">Best For</p>
+        <ul class="hero-list">
+          <li>Prototype RFQs</li>
+          <li>Small-batch CNC jobs</li>
+          <li>Customer intake reviews</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <form id="quote-form" class="panel form-panel">
+        <div class="panel-header">
+          <h2>Part Intake</h2>
+          <p>Enter the details you typically collect before pricing a job.</p>
+        </div>
+
+        <label class="field">
+          <span>Customer / Project</span>
+          <input type="text" id="projectName" name="projectName" placeholder="Example: Turbo Intake Flange Rev B">
+        </label>
+
+        <label class="field file-field">
+          <span>STEP File</span>
+          <input type="file" id="stepFile" name="stepFile" accept=".stp,.step,model/step,application/step">
+          <small>Accepted: `.stp` or `.step`</small>
+        </label>
+
+        <div class="grid two-up">
+          <label class="field">
+            <span>Material</span>
+            <select id="material" name="material">
+              <option value="aluminum_6061">Aluminum 6061</option>
+              <option value="aluminum_7075">Aluminum 7075</option>
+              <option value="steel_1018">Steel 1018</option>
+              <option value="stainless_304">Stainless 304</option>
+              <option value="stainless_316">Stainless 316</option>
+              <option value="delrin">Delrin</option>
+              <option value="titanium">Titanium Grade 5</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Quantity</span>
+            <input type="number" id="quantity" name="quantity" min="1" value="10">
+          </label>
+        </div>
+
+        <div class="grid three-up">
+          <label class="field">
+            <span>Finish</span>
+            <select id="finish" name="finish">
+              <option value="as_machined">As Machined</option>
+              <option value="bead_blast">Bead Blast</option>
+              <option value="anodized_clear">Clear Anodize</option>
+              <option value="anodized_black">Black Anodize</option>
+              <option value="powder_coat">Powder Coat</option>
+              <option value="passivated">Passivated</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Tolerance Band</span>
+            <select id="tolerance" name="tolerance">
+              <option value="standard">Standard (+/- 0.005")</option>
+              <option value="precision">Precision (+/- 0.002")</option>
+              <option value="tight">Tight (+/- 0.001")</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Lead Time</span>
+            <select id="leadTime" name="leadTime">
+              <option value="standard">Standard (10 business days)</option>
+              <option value="expedite">Expedite (5 business days)</option>
+              <option value="rush">Rush (2 business days)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="grid three-up">
+          <label class="field">
+            <span>Part Complexity</span>
+            <select id="complexity" name="complexity">
+              <option value="simple">Simple 2.5D</option>
+              <option value="medium" selected>Medium 3-axis</option>
+              <option value="complex">Complex 4/5-axis</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Estimated Setup Hours</span>
+            <input type="number" id="setupHours" name="setupHours" min="0.5" max="24" step="0.5" value="1.5">
+          </label>
+
+          <label class="field">
+            <span>Estimated Cycle Minutes / Part</span>
+            <input type="number" id="cycleMinutes" name="cycleMinutes" min="1" max="600" step="1" value="18">
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Notes</span>
+          <textarea id="notes" name="notes" rows="4" placeholder="Critical features, inspection needs, fixtures, threads, inserts, or packaging notes..."></textarea>
+        </label>
+
+        <div class="actions">
+          <button type="submit" class="button button-primary">Generate Estimate</button>
+          <button type="button" id="resetButton" class="button button-secondary">Reset</button>
+        </div>
+      </form>
+
+      <section class="panel result-panel">
+        <div class="panel-header">
+          <h2>Quote Summary</h2>
+          <p>Live estimate based on the inputs on the left.</p>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+          <p>No estimate yet.</p>
+          <span>Generate a quote to see pricing, schedule, and intake notes.</span>
+        </div>
+
+        <div id="quote-output" class="quote-output hidden">
+          <div class="result-topline">
+            <div>
+              <p class="result-label">Estimated Total</p>
+              <h3 id="totalPrice">$0.00</h3>
+            </div>
+            <div class="badge" id="riskBadge">Review Needed</div>
+          </div>
+
+          <div class="result-grid">
+            <article class="metric-card">
+              <p class="metric-label">Unit Price</p>
+              <strong id="unitPrice">$0.00</strong>
+            </article>
+            <article class="metric-card">
+              <p class="metric-label">Estimated Lead Time</p>
+              <strong id="leadTimeResult">-</strong>
+            </article>
+            <article class="metric-card">
+              <p class="metric-label">Quoted Quantity</p>
+              <strong id="quantityResult">-</strong>
+            </article>
+          </div>
+
+          <div class="breakdown">
+            <h4>Cost Breakdown</h4>
+            <div class="breakdown-row"><span>Material</span><strong id="materialCost">$0.00</strong></div>
+            <div class="breakdown-row"><span>Setup</span><strong id="setupCost">$0.00</strong></div>
+            <div class="breakdown-row"><span>Machining</span><strong id="machiningCost">$0.00</strong></div>
+            <div class="breakdown-row"><span>Finish</span><strong id="finishCost">$0.00</strong></div>
+            <div class="breakdown-row"><span>Lead Time Adjustment</span><strong id="leadCost">$0.00</strong></div>
+          </div>
+
+          <div class="breakdown notes-card">
+            <h4>Intake Snapshot</h4>
+            <p id="summaryText"></p>
+          </div>
+
+          <div class="breakdown notes-card">
+            <h4>Estimator Notes</h4>
+            <ul id="recommendations"></ul>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
