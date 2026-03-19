@@ -211,6 +211,18 @@ textarea {
   margin-top: 4px;
 }
 
+.form-status {
+  min-height: 1.4rem;
+  margin: 0;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+}
+
+.form-status.error {
+  color: var(--accent-deep);
+}
+
 .button {
   border: 0;
   border-radius: 999px;

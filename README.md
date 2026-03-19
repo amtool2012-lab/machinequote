@@ -1,6 +1,6 @@
 # MachineQuote
 
-MachineQuote is a lightweight web app for generating budgetary machining estimates from common intake details:
+MachineQuote is a lightweight web app for generating budgetary machining estimates from common intake details. It now includes a small Node backend so quote generation happens through an API instead of only in the browser.
 
 - STEP file upload
 - quantity
@@ -15,7 +15,8 @@ It is designed as a fast front-end intake tool for CNC quoting workflows.
 
 ## Features
 
-- Single-page interface with no build step
+- Small Node backend with `POST /api/quote`
+- Single-page interface with no frontend build step
 - Machining-focused pricing breakdown
 - Intake summary for internal review or customer follow-up
 - Responsive layout for desktop and mobile
@@ -23,19 +24,44 @@ It is designed as a fast front-end intake tool for CNC quoting workflows.
 
 ## Run locally
 
-Open [index.html](C:\Users\1950101\Documents\New project\index.html) in a browser.
-
-If you want to serve it locally instead of opening the file directly, you can use:
+Install is not required. Start the backend server:
 
 ```powershell
-python -m http.server 8000
+npm start
 ```
 
-Then open `http://localhost:8000`.
+Then open `http://localhost:3000`.
+
+## API
+
+Generate a quote with:
+
+```http
+POST /api/quote
+Content-Type: application/json
+```
+
+Example body:
+
+```json
+{
+  "projectName": "Turbo Intake Flange Rev B",
+  "fileName": "intake-flange.step",
+  "material": "aluminum_6061",
+  "quantity": 10,
+  "finish": "anodized_black",
+  "tolerance": "precision",
+  "leadTime": "expedite",
+  "complexity": "medium",
+  "setupHours": 1.5,
+  "cycleMinutes": 18,
+  "notes": "Inspect sealing face before release."
+}
+```
 
 ## Pricing model
 
-This app uses a simple client-side estimation model:
+This app uses a simple estimation model in the backend:
 
 - material base rate by material type
 - setup cost from estimated setup hours

@@ -1,0 +1,11 @@
+{
+  "name": "machinequote",
+  "version": "1.0.0",
+  "description": "Backend-enabled machining quote estimator",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check app.js && node --check server.js && node --check quote-engine.js"
+  },
+  "license": "MIT"
+}
